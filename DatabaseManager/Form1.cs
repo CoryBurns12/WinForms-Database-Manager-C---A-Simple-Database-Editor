@@ -197,11 +197,16 @@ namespace DatabaseManager
             {
                 string dbNameDelete = tbox.Text;
                 string createDatabaseQuery = $"DROP DATABASE {dbNameDelete}";
-
+                string checkDatabaseCountQuery = "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN ('information_schema', 'mysql', 'performance_schema', 'sys', 'sakilla', 'world')"; // If you use this this depends on your config, some might not have these same databases by default
+                int count = 0;
                 try
                 {
                     command = new MySqlCommand(createDatabaseQuery, connection);
                     command.ExecuteNonQuery();
+
+                    MySqlCommand command2 = new MySqlCommand(checkDatabaseCountQuery, connection);
+
+                    count = Convert.ToInt32(command2.ExecuteScalar());
 
                     MessageBox.Show($"{dbNameDelete} database deleted!");
                     text.Visible = true;
@@ -210,6 +215,14 @@ namespace DatabaseManager
                 catch (MySqlException ex)
                 {
                     MessageBox.Show($"Error deleting database with name {dbNameDelete}! {ex.Message}");
+                }
+
+                if (count == 0)
+                {
+                    MessageBox.Show("No databases to delete!");
+                    ShowButtons();
+                    text.Visible = false;
+                    return;
                 }
             };
 
@@ -222,6 +235,13 @@ namespace DatabaseManager
             button1.Visible = false;
             button2.Visible = false;
             button3.Visible = false;
+        }
+
+        private void ShowButtons()
+        {
+            button1.Visible = true;
+            button2.Visible = true;
+            button3.Visible = true;
         }
     }
 }
