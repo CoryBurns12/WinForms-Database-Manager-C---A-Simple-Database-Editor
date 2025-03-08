@@ -1,3 +1,4 @@
+using Microsoft.VisualBasic.Devices;
 using MySql.Data.MySqlClient;
 using System;
 using System.Data;
@@ -11,6 +12,12 @@ namespace DatabaseManager
 
         private MySqlConnection connection;
         private MySqlCommand command;
+        Button backButton = new()
+        {
+            Text = "<",
+            Location = new(12, 408),
+            Size = new(30, 30)
+        };
 
         public Form1()
         {
@@ -21,6 +28,10 @@ namespace DatabaseManager
 
         private void button1_Click(object sender, EventArgs e)
         {
+            button4.Visible = false;
+            button2.Visible = false;
+            button3.Visible = false;
+            backButton.Visible = false;
 
             TableLayoutPanel text = new()
             {
@@ -36,7 +47,7 @@ namespace DatabaseManager
             text.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33f));
             text.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-            TextBox tbox = new TextBox
+            TextBox tbox = new()
             {
                 PlaceholderText = "Host/Server: ",
                 Dock = DockStyle.Fill,
@@ -44,7 +55,7 @@ namespace DatabaseManager
             };
             text.Controls.Add(tbox, 0, 0);
 
-            TextBox tbox2 = new TextBox
+            TextBox tbox2 = new()
             {
                 PlaceholderText = "Username: ",
                 Dock = DockStyle.Fill,
@@ -52,7 +63,7 @@ namespace DatabaseManager
             };
             text.Controls.Add(tbox2, 0, 1);
 
-            TextBox tbox3 = new TextBox
+            TextBox tbox3 = new()
             {
                 PlaceholderText = "Password: ",
                 Dock = DockStyle.Fill,
@@ -61,7 +72,7 @@ namespace DatabaseManager
             };
             text.Controls.Add(tbox3, 0, 2);
 
-            Button connectButton = new Button
+            Button connectButton = new()
             {
                 Text = "Connect!",
                 Dock = DockStyle.Fill
@@ -76,11 +87,12 @@ namespace DatabaseManager
 
                 try
                 {
-                    connection = new MySqlConnection(connectionquery);
+                    connection = new(connectionquery);
                     connection.Open();
                     MessageBox.Show("Connection Successful!");
                     button1.Visible = true;
                     button2.Visible = true;
+                    button4.Visible = true;
                     text.Visible = false;
                 }
                 catch (Exception ex)
@@ -106,7 +118,7 @@ namespace DatabaseManager
 
         private void button2_Click(object sender, EventArgs e)
         {
-
+            button4.Visible = false;
             HideButtons();
 
             TableLayoutPanel text = new()
@@ -164,6 +176,7 @@ namespace DatabaseManager
 
         private void button3_Click(object sender, EventArgs e)
         {
+            button4.Visible = false;
             HideButtons();
 
             TableLayoutPanel text = new()
@@ -177,7 +190,7 @@ namespace DatabaseManager
 
             text.RowStyles.Add(new RowStyle(SizeType.Percent, 33.33f));
 
-            TextBox tbox = new TextBox
+            TextBox tbox = new()
             {
                 Dock = DockStyle.Fill,
                 PlaceholderText = "Database to Delete: ",
@@ -201,10 +214,10 @@ namespace DatabaseManager
                 int count = 0;
                 try
                 {
-                    command = new MySqlCommand(createDatabaseQuery, connection);
+                    command = new(createDatabaseQuery, connection);
                     command.ExecuteNonQuery();
 
-                    MySqlCommand command2 = new MySqlCommand(checkDatabaseCountQuery, connection);
+                    MySqlCommand command2 = new(checkDatabaseCountQuery, connection);
 
                     count = Convert.ToInt32(command2.ExecuteScalar());
 
@@ -222,12 +235,33 @@ namespace DatabaseManager
                     MessageBox.Show("No databases to delete!");
                     ShowButtons();
                     text.Visible = false;
+                    button3.Visible = false;
                     return;
+                }
+            };
+
+            Button backButton = new()
+            {
+                Text = "Back",
+                Dock = DockStyle.Fill
+            };
+
+            backButton.Click += (sender, e) =>
+            {
+                try
+                {
+                    ShowButtons();
+                    text.Visible = false;
+                }
+                catch (MySqlException ex)
+                {
+                    MessageBox.Show($"Error going back {ex.Message}");
                 }
             };
 
             this.Controls.Add(text);
             text.Controls.Add(deleteButton, 0, 1);
+            text.Controls.Add(backButton, 0, 2);
         }
 
         private void HideButtons()
@@ -242,6 +276,52 @@ namespace DatabaseManager
             button1.Visible = true;
             button2.Visible = true;
             button3.Visible = true;
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            HideButtons();
+            int click = 0;
+
+            click++;
+
+            if(click >= 1)
+            {
+                backButton.Visible = true;
+            }
+            else
+            {
+                backButton.Visible = false;
+            }
+
+
+                backButton.Click += (sender, e) =>
+                        {
+                            if (click >= 1)
+                            {
+                                backButton.Visible = false;
+                                click--;
+                            }
+
+                            try
+                            {
+
+                                if (connection == null)
+                                    button1.Visible = true;
+                                else
+                                {
+                                    ShowButtons();
+                                    button4.Visible = true;
+                                    backButton.Visible = true;
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show(ex.Message);
+                            }
+                        };
+
+            this.Controls.Add(backButton);
         }
     }
 }
