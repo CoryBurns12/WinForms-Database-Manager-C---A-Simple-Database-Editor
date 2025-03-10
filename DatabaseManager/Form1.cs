@@ -2,8 +2,8 @@ using Microsoft.VisualBasic.Devices;
 using MySql.Data.MySqlClient;
 using System;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace DatabaseManager
 {
@@ -12,7 +12,7 @@ namespace DatabaseManager
 
         private MySqlConnection connection;
         private MySqlCommand command;
-        Button backButton = new()
+        Button backArrow = new()
         {
             Text = "<",
             Location = new(12, 408),
@@ -24,6 +24,7 @@ namespace DatabaseManager
             InitializeComponent();
             button2.Visible = false;
             button3.Visible = false;
+            button5.Visible = false;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -31,7 +32,7 @@ namespace DatabaseManager
             button4.Visible = false;
             button2.Visible = false;
             button3.Visible = false;
-            backButton.Visible = false;
+            backArrow.Visible = false;
 
             TableLayoutPanel text = new()
             {
@@ -223,6 +224,7 @@ namespace DatabaseManager
 
                     MessageBox.Show($"{dbNameDelete} database deleted!");
                     text.Visible = true;
+                    tbox.Clear();
                     HideButtons();
                 }
                 catch (MySqlException ex)
@@ -233,7 +235,7 @@ namespace DatabaseManager
                 if (count == 0)
                 {
                     MessageBox.Show("No databases to delete!");
-                    ShowButtons();
+                    ShowFirstPageButtons();
                     text.Visible = false;
                     button3.Visible = false;
                     return;
@@ -250,7 +252,7 @@ namespace DatabaseManager
             {
                 try
                 {
-                    ShowButtons();
+                    ShowFirstPageButtons();
                     text.Visible = false;
                 }
                 catch (MySqlException ex)
@@ -271,57 +273,153 @@ namespace DatabaseManager
             button3.Visible = false;
         }
 
-        private void ShowButtons()
+        private void ShowFirstPageButtons()
         {
             button1.Visible = true;
             button2.Visible = true;
             button3.Visible = true;
         }
 
+        private void ShowSecondPageButtons()
+        {
+            button5.Visible = true;
+        }
+
         private void button4_Click(object sender, EventArgs e)
         {
             HideButtons();
+            ShowSecondPageButtons();
             int click = 0;
 
             click++;
 
-            if(click >= 1)
+            if (click >= 1)
             {
-                backButton.Visible = true;
+                backArrow.Visible = true;
             }
             else
             {
-                backButton.Visible = false;
+                backArrow.Visible = false;
             }
 
 
-                backButton.Click += (sender, e) =>
+            backArrow.Click += (sender, e) =>
+                    {
+                        button5.Visible = false;
+                        if (click >= 1)
                         {
-                            if (click >= 1)
-                            {
-                                backButton.Visible = false;
-                                click--;
-                            }
+                            backArrow.Visible = false;
+                            click--;
+                        }
 
-                            try
-                            {
+                        try
+                        {
 
-                                if (connection == null)
-                                    button1.Visible = true;
-                                else
-                                {
-                                    ShowButtons();
-                                    button4.Visible = true;
-                                    backButton.Visible = true;
-                                }
-                            }
-                            catch (Exception ex)
+                            if (connection == null)
+                                button1.Visible = true;
+                            else
                             {
-                                MessageBox.Show(ex.Message);
+                                ShowFirstPageButtons();
+                                button4.Visible = true;
+                                backArrow.Visible = true;
                             }
-                        };
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        }
+                    };
 
-            this.Controls.Add(backButton);
+            this.Controls.Add(backArrow);
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            while(connection == null)
+            {
+                MessageBox.Show("Connection has not been initiated yet! Please connect to your MYSQL server first.");
+                return;
+            }
+
+            TableLayoutPanel text = new()
+            {
+                Dock = DockStyle.Fill,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                RowCount = 1,
+                ColumnCount = 1
+            };
+
+            text.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+            text.RowStyles.Add(new RowStyle(SizeType.Absolute, 20));
+
+            TextBox tbox = new()
+            {
+                Dock = DockStyle.Fill,
+                PlaceholderText = "Database to add table to: ",
+                ForeColor = Color.Black
+            };
+
+            TextBox tbox2 = new()
+            {
+                Dock = DockStyle.Fill,
+                PlaceholderText = "Table Name: ",
+                ForeColor = Color.Black
+            };
+
+            text.Controls.Add(tbox2, 0, 0);
+            text.Controls.Add(tbox, 0, 0);
+            this.Controls.Add(text);
+
+            button4.Visible = false;
+            button5.Visible = false;
+            backArrow.Visible = false;
+
+            ComboBox box = new()
+            {
+                Location = new(12, 100),
+                Size = new(40, 40)
+            };
+
+            for (int i = 1; i < 11; i++)
+            {
+                box.Items.Add(i);
+            }
+
+            Button tableCreate = new()
+            {
+                Text = "Create Table",
+                Dock = DockStyle.Fill,
+                Location = new(12, 408)
+            };
+
+            tableCreate.Click += (sender, e) =>
+            {
+                string dbName = tbox.Text;
+                string tableName = tbox2.Text;
+                string useDatabaseQuery = $"USE {dbName}";
+                string createTableQuery = $"CREATE TABLE {tableName}";
+
+                try
+                {
+                    command = new(createTableQuery, connection);
+                    MySqlCommand command2 = new(useDatabaseQuery, connection);
+
+                    command2.ExecuteNonQuery();
+                    command.ExecuteNonQuery();
+                    MessageBox.Show($"Table created for '{dbName}' with the name '{tableName}'!");
+                    tbox.Clear();
+                    tbox2.Clear();
+                }
+                catch (MySqlException ex)
+                {
+                    MessageBox.Show($"Error creating table: {ex.Message}");
+                }
+            };
+
+            this.Controls.Add(text);
+            text.Controls.Add(tableCreate, 0, 1);
+            text.Controls.Add(box);
         }
     }
 }
